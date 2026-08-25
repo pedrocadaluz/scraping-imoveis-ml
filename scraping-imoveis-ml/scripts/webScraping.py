@@ -41,6 +41,10 @@ pagina = 1
 
 while True:
     print(f"Coletando dados da página {pagina}...")
+    if pagina > 1:
+        # Navega direto para a página via parâmetro de URL: clicar no botão "Próximo"
+        # via JS não avança a listagem de forma confiável neste site.
+        driver.get(f"{url}?pagina={pagina}")
     sleep(3) # Pausa para garantir que a página carregou
     
     try:
@@ -58,13 +62,19 @@ while True:
     # Extraindo as informações de cada card de imóvel
     for elem in elementos:
         try:
-            titulo = elem.find_element(By.CLASS_NAME, 'ellipse-text').text
+            titulo = elem.find_element(By.XPATH, ".//h2[@itemprop='name']").text
             preco = elem.find_element(By.CLASS_NAME, 'body-large').text
+            link = elem.get_attribute('href')
 
             # Quartos
             try:
                 quartos = elem.find_element(By.XPATH, ".//div[contains(text(), 'Quarto') and contains(@class, 'rounded-pill')]").text
             except: quartos = None
+
+            # Suítes (campo separado de quartos, o site já mostra os dois como badges distintos)
+            try:
+                suites = elem.find_element(By.XPATH, ".//div[contains(text(), 'Suíte') and contains(@class, 'rounded-pill')]").text
+            except: suites = None
 
             # Metragem
             try:
@@ -80,26 +90,27 @@ while True:
                 'titulo': titulo,
                 'preco': preco,
                 'quartos': quartos,
+                'suites': suites,
                 'metragem': metragem,
-                'vagas': vagas
+                'vagas': vagas,
+                'link': link
             })
 
         except Exception:
             continue # Se der erro em um card específico, pula para o próximo
 
-    # 4. Navegação para a próxima página
+    # 4. Verifica se existe próxima página
     try:
         botao_proximo = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'span.btn.next')))
-        
+
         # Verifica se o botão "Próximo" está desabilitado (última página)
         if "disabled" in botao_proximo.get_attribute("class"):
             print("Última página alcançada.")
-            break 
-            
-        driver.execute_script("arguments[0].click();", botao_proximo)
+            break
+
         pagina += 1
     except Exception:
-        print("Não há mais páginas para clicar ou ocorreu um erro na paginação.")
+        print("Não há mais páginas ou ocorreu um erro na paginação.")
         break
 
 driver.quit()
@@ -108,7 +119,7 @@ driver.quit()
 # 5. Criação e Salvamento do DataFrame BRUTO
 # ==========================================
 df = pd.DataFrame(lst_imoveis)
-df = df.drop_duplicates(subset=['titulo'], keep='first')
+df = df.drop_duplicates(subset=['titulo', 'preco', 'metragem'], keep='first')
 
 # Salvando os dados brutos
 caminho_raw = 'data/raw/imoveis_brutos.csv'

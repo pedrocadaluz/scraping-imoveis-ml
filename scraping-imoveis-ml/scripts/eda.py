@@ -8,8 +8,8 @@ sns.set_theme(style="whitegrid")
 # =====================================================================
 # 1. CARREGAMENTO DOS DADOS
 # =====================================================================
-# Usamos o 'r' antes da string para o Windows entender as barras invertidas (\)
-caminho_arquivo = r"C:\Ludmila\faculdade\ProjetoCienciasDados5\Regressao_imoveis\data\raw\imoveis_brutos.csv"
+caminho_arquivo = "C:\\pedro_ibmec\\sexto_semestre\\data_science_v\\scraping-imoveis-ml\\scraping-imoveis-ml\\data\\raw\\imoveis_brutos.csv"
+
 
 print("Carregando os dados...")
 df = pd.read_csv(caminho_arquivo)
@@ -20,75 +20,64 @@ df = pd.read_csv(caminho_arquivo)
 print("\n--- 1. QUANTIDADE DE LINHAS E COLUNAS ---")
 print(f"Linhas: {df.shape[0]} | Colunas: {df.shape[1]}")
 
-print("\n--- 2. PRIMEIRAS 5 LINHAS ---")
-display(df.head()) # Use print(df.head()) se não estiver no Jupyter Notebook
+print("\n--- 2. COLUNAS ---")
+print(list(df.columns))
 
-print("\n--- 3. INFORMAÇÕES DAS COLUNAS E TIPOS DE DADOS ---")
-# O .info() mostra o tipo de dado de cada coluna e se há valores nulos
-df.info() 
+print("\n--- 3. PRIMEIRAS 5 LINHAS ---")
+print(df.head())
 
-print("\n--- 4. VALORES AUSENTES (NULOS) POR COLUNA ---")
-print(df.isnull().sum())
+print("\n--- 4. TIPOS DE DADOS E INFORMAÇÕES GERAIS ---")
+df.info()
 
-# =====================================================================
-# 3. PREPARAÇÃO RÁPIDA PARA ANÁLISE NUMÉRICA
-# Como é o dado bruto, precisamos converter texto para número para usar o .describe()
-# =====================================================================
-print("\n--- CONVERTENDO DADOS PARA ANÁLISE NUMÉRICA ---")
+print("\n--- 5. VALORES AUSENTES (NULOS) POR COLUNA ---")
+resumo_nulos = pd.DataFrame({
+    'nulos': df.isnull().sum(),
+    'percentual (%)': (df.isnull().mean() * 100).round(2)
+})
+print(resumo_nulos)
 
-df_eda = df.copy() # Criamos uma cópia para não alterar o original carregado
+print("\n--- 6. LINHAS DUPLICADAS ---")
+print(f"Duplicadas (linha inteira): {df.duplicated().sum()}")
 
-# Limpeza básica (igual você fez antes) para permitir a matemática
-df_eda['preco'] = df_eda['preco'].astype(str).str.replace('.', '', regex=False)
-df_eda['preco'] = pd.to_numeric(df_eda['preco'], errors='coerce')
-
-df_eda['quartos'] = df_eda['quartos'].astype(str).str.extract(r'(\d+)')[0].astype(float)
-df_eda['metragem'] = df_eda['metragem'].astype(str).str.extract(r'(\d+)')[0].astype(float)
-df_eda['vagas'] = df_eda['vagas'].astype(str).str.extract(r'(\d+)')[0].astype(float)
+print("\n--- 7. VALORES ÚNICOS POR COLUNA ---")
+print(df.nunique())
 
 # =====================================================================
-# 4. ESTATÍSTICA DESCRITIVA
+# 3. ANÁLISE DE OUTLIERS
+# Conversão numérica feita só em memória, apenas para esta análise —
+# não altera nem salva o dataset bruto.
 # =====================================================================
-print("\n--- 5. RESUMO ESTATÍSTICO DAS COLUNAS NUMÉRICAS ---")
-# O .describe() traz média, desvio padrão, valores mínimos, máximos e quartis
-display(df_eda.describe()) # Use print() se não estiver no Jupyter
+print("\n--- 8. ANÁLISE DE OUTLIERS (método IQR) ---")
 
-# =====================================================================
-# 5. ANÁLISE VISUAL (GRÁFICOS)
-# =====================================================================
-print("\n--- 6. GERANDO GRÁFICOS DE ANÁLISE ---")
+df_num = df.copy()
+df_num['preco'] = pd.to_numeric(df_num['preco'].astype(str).str.replace('.', '', regex=False), errors='coerce')
+df_num['quartos'] = df_num['quartos'].astype(str).str.extract(r'(\d+)')[0].astype(float)
+df_num['metragem'] = df_num['metragem'].astype(str).str.extract(r'(\d+)')[0].astype(float)
+df_num['vagas'] = df_num['vagas'].astype(str).str.extract(r'(\d+)')[0].astype(float)
 
-# Criando uma figura com 2 gráficos lado a lado
-fig, axes = plt.subplots(1, 2, figsize=(15, 5))
+colunas_numericas = ['preco', 'quartos', 'metragem', 'vagas']
 
-# Gráfico 1: Histograma (Distribuição dos Preços)
-# Ajuda a ver onde está a maior concentração de preços
-sns.histplot(df_eda['preco'].dropna(), bins=30, kde=True, color='blue', ax=axes[0])
-axes[0].set_title('Distribuição de Preços de Aluguel')
-axes[0].set_xlabel('Preço (R$)')
-axes[0].set_ylabel('Quantidade de Imóveis')
+for coluna in colunas_numericas:
+    q1 = df_num[coluna].quantile(0.25)
+    q3 = df_num[coluna].quantile(0.75)
+    iqr = q3 - q1
+    limite_inferior = q1 - 1.5 * iqr
+    limite_superior = q3 + 1.5 * iqr
 
-# Gráfico 2: Boxplot (Identificação de Outliers/Valores Discrepantes)
-# Ajuda a ver se há aluguéis com preços absurdamente altos fora do padrão
-sns.boxplot(x=df_eda['preco'].dropna(), color='cyan', ax=axes[1])
-axes[1].set_title('Boxplot de Preços (Visão de Outliers)')
-axes[1].set_xlabel('Preço (R$)')
+    outliers = df_num[(df_num[coluna] < limite_inferior) | (df_num[coluna] > limite_superior)]
 
+    print(f"\n> {coluna}")
+    print(f"  Q1={q1:.2f} | Q3={q3:.2f} | IQR={iqr:.2f}")
+    print(f"  Limites aceitáveis: [{limite_inferior:.2f}, {limite_superior:.2f}]")
+    print(f"  Outliers encontrados: {len(outliers)} ({len(outliers) / len(df_num) * 100:.2f}%)")
+    if len(outliers):
+        print(df.loc[outliers.index, ['titulo', 'preco', 'quartos', 'metragem', 'vagas']].to_string())
+
+# Boxplots para visualizar os outliers de cada coluna numérica
+fig, axes = plt.subplots(1, len(colunas_numericas), figsize=(4 * len(colunas_numericas), 5))
+for ax, coluna in zip(axes, colunas_numericas):
+    sns.boxplot(y=df_num[coluna].dropna(), ax=ax, color='cyan')
+    ax.set_title(coluna)
 plt.tight_layout()
 plt.show()
 
-# =====================================================================
-# 6. ANÁLISE DE CORRELAÇÃO E AGRUPAMENTOS
-# =====================================================================
-print("\n--- 7. PREÇO MÉDIO POR QUANTIDADE DE QUARTOS ---")
-# O .groupby() é perfeito para responder perguntas de negócio
-preco_por_quarto = df_eda.groupby('quartos')['preco'].mean().round(2)
-print(preco_por_quarto)
-
-# Gráfico de dispersão: Metragem vs Preço (Existe relação?)
-plt.figure(figsize=(8, 5))
-sns.scatterplot(data=df_eda, x='metragem', y='preco', hue='quartos', palette='viridis', alpha=0.7)
-plt.title('Relação entre Metragem e Preço de Aluguel')
-plt.xlabel('Metragem (m²)')
-plt.ylabel('Preço (R$)')
-plt.show()

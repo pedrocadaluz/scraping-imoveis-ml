@@ -1,0 +1,2 @@
+# Aqui estão os logs do projeto (dificuldades, etc)
+apartamento https://www.dfimoveis.com.br/imovel/apartamento-4-quartos-venda-taguatinga-norte-taguatinga-df-st-area-especiais-setor-c-norte-1402445 está constando 62 quartos só que na realidade é APARTAMENTO 3 QUARTOS COM SUÍTE NO RESIDENCIAL ESPLANADA – TAGUATINGA NORTE (possivelmente erro de digitação), tratamos esse dado na mão pela descrepância dos dados
