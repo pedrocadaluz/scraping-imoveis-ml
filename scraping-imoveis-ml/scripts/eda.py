@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -8,7 +9,12 @@ sns.set_theme(style="whitegrid")
 # =====================================================================
 # 1. CARREGAMENTO DOS DADOS
 # =====================================================================
-caminho_arquivo = "C:\\pedro_ibmec\\sexto_semestre\\data_science_v\\scraping-imoveis-ml\\scraping-imoveis-ml\\data\\raw\\imoveis_brutos.csv"
+# Caminho relativo à localização deste arquivo (não ao diretório de onde o
+# script é chamado), para funcionar tanto rodando pelo terminal quanto pelo
+# botão "Run" da IDE.
+PASTA_SCRIPTS = os.path.dirname(os.path.abspath(__file__))
+PASTA_PROJETO = os.path.dirname(PASTA_SCRIPTS)
+caminho_arquivo = os.path.join(PASTA_PROJETO, 'data', 'raw', 'imoveis_brutos.csv')
 
 
 print("Carregando os dados...")

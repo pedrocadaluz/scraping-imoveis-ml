@@ -4,9 +4,14 @@ import pandas as pd
 # ==========================================
 # 0. CARREGAMENTO DOS DADOS BRUTOS
 # ==========================================
-CAMINHO_BRUTOS = 'data/raw/imoveis_brutos.csv'
-CAMINHO_SUBTITULOS = 'data/raw/subtitulos.csv'
-CAMINHO_CLEAN = 'data/clean/imoveis_limpos.csv'
+# Caminhos relativos à localização deste arquivo (não ao diretório de onde o
+# script é chamado), para funcionar tanto rodando pelo terminal quanto pelo
+# botão "Run" da IDE.
+PASTA_SCRIPTS = os.path.dirname(os.path.abspath(__file__))
+PASTA_PROJETO = os.path.dirname(PASTA_SCRIPTS)
+CAMINHO_BRUTOS = os.path.join(PASTA_PROJETO, 'data', 'raw', 'imoveis_brutos.csv')
+CAMINHO_SUBTITULOS = os.path.join(PASTA_PROJETO, 'data', 'raw', 'subtitulos.csv')
+CAMINHO_CLEAN = os.path.join(PASTA_PROJETO, 'data', 'clean', 'imoveis_limpos.csv')
 
 print("Iniciando a limpeza dos dados...")
 df = pd.read_csv(CAMINHO_BRUTOS)
@@ -93,7 +98,7 @@ df = df.reset_index(drop=True)
 # ==========================================
 # 5. Salvamento do DataFrame LIMPO
 # ==========================================
-os.makedirs('data/clean', exist_ok=True)
+os.makedirs(os.path.dirname(CAMINHO_CLEAN), exist_ok=True)
 df.to_csv(CAMINHO_CLEAN, index=False, encoding='utf-8')
 
 print(f"\n--> Dados LIMPOS salvos em: {CAMINHO_CLEAN} ({len(df)} imóveis)")

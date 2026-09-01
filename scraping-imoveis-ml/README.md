@@ -139,9 +139,39 @@ O dataset limpo é salvo em `data/clean/imoveis_limpos.csv`, com o índice reorg
 
 ---
 
+## 4. Modelagem Preditiva (`analise.py`)
+
+### 4.1 Objetivo
+
+Ajustar um modelo de **Regressão Linear** para estimar `preco` a partir das features numéricas geradas na limpeza, e avaliar sua qualidade com métricas além do R² (MAE, RMSE, MAPE, R² ajustado e R² por validação cruzada de 5 folds), para não tirar conclusão de uma única métrica isolada nem de um único split treino/teste.
+
+### 4.2 Decisão: Remoção da Feature `quartos`
+
+O modelo inicial usava `quartos`, `suites`, `metragem` e `vagas` como preditoras, e chegou a um R² de teste de **0,578**, com o coeficiente de `quartos` praticamente nulo (**-745**, contra +95.286 de `suites` e +3.361 de `metragem`) — efeito esperado de **colinearidade**: apartamentos maiores tendem a ter mais quartos, então, controlando por `metragem`, um quarto a mais no mesmo tamanho não agrega valor perceptível (às vezes até indica cômodos menores/subdivididos).
+
+Testado o modelo sem `quartos` (mesmas 3 features restantes), o resultado foi:
+
+| Métrica | Com `quartos` | Sem `quartos` |
+|---|---|---|
+| R² teste | 0,5780 | 0,5776 |
+| R² ajustado | 0,5636 | 0,5668 |
+| R² médio (CV 5-fold) | 0,5628 | 0,5682 |
+| MAE | R$ 59.835 | R$ 59.796 |
+| RMSE | R$ 81.142 | R$ 81.185 |
+| MAPE | 17,60% | 17,59% |
+
+A diferença é irrelevante em todas as métricas — como esperado, já que o coeficiente já era próximo de zero — e o R² ajustado e o R² de validação cruzada até melhoram ligeiramente, por o modelo deixar de "gastar" um grau de liberdade em uma variável que não explica nada. Por isso, `quartos` foi removido de `analise.py`: **não é um ganho de capacidade preditiva, é simplificação** — um modelo mais enxuto com desempenho equivalente.
+
+### 4.3 Leitura dos Resultados Atuais
+
+Com `suites`, `metragem` e `vagas`, o modelo explica ~58% da variação do preço (R² teste 0,5776), com erro médio de ~R$ 60 mil (MAE) e ~17,6% do valor do imóvel (MAPE). Os ~42% de variação não explicada apontam para a ausência de uma variável de **localização** (bairro/setor) no modelo — hoje só disponível como texto livre dentro de `titulo` — que é tipicamente o fator de maior peso no preço de imóveis e é o próximo candidato natural de feature engineering para melhorar o modelo de fato.
+
+---
+
 ## Próximos Passos
 
-- Concluir a coleta do campo `subtitulo` (`scraping_subtitulo.py`) para todos os imóveis, para que a remoção de ágio em `limpeza.py` deixe de depender de arquivo parcial.
+- Extrair uma feature de **localização** (bairro/setor) a partir de `titulo` e incluí-la no modelo (`analise.py`) — maior candidata a melhorar o R² de 0,58 atual, já que hoje o modelo não usa nenhuma informação geográfica.
+- Concluir a coleta do campo `subtitulo` (agora parte de `scraping.py`) para todos os imóveis, para que a remoção de ágio em `limpeza.py` deixe de depender de arquivo parcial.
 - Reavaliar o filtro de "lançamento" caso o site volte a preencher `quartos`/`vagas` também para empreendimentos (hoje a regra combina padrão de URL + campos vazios como reforço).
 - Definir como tratar erros de digitação pontuais (ex.: "62 quartos") de forma sistemática, caso passem a aparecer com frequência — hoje exigem investigação manual a cada rodada de EDA.
 
