@@ -1,0 +1,15 @@
+# Claude
+.claude/
+.claude.json
+CLAUDE.local.md
+
+# Ambiente Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+
+# Dados (gerados pelo scraping/limpeza, não versionados)
+data/raw/*
+data/clean/*
+!data/raw/.gitkeep
+!data/clean/.gitkeep
